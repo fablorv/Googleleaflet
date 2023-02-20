@@ -1,20 +1,10 @@
-import { StyleSheet, Text, View,Button, Alert , TextInput, ScrollView, SafeAreaView} from 'react-native';
+import { StyleSheet, Text, View,Button, Alert , TextInput, ScrollView, SafeAreaView, Dimensions, TouchableOpacity} from 'react-native';
 import MapView, {Geojson, Marker, Polyline} from 'react-native-maps';
 import * as Location from 'expo-location';
 import React , {useState, useEffect} from 'react';
 import axios from 'axios'
 import { LatLng, LeafletView, mapShapes } from 'react-native-leaflet-view';
-
-
-
-
-
-
-
-
-
-
-
+import { Accelerometer } from 'expo-sensors';
 
 export default function App() {
 	  
@@ -30,12 +20,34 @@ export default function App() {
 	const [presslocationthree, setPresslocationthree] = useState({longitude:20.22345, latitude:80.22214})
 	const [longitudeuser, setLongitudeuser] = useState(10)
 	const [latitudeuser, setLatitudeuser] = useState(24)
-	
-	
+	const [map , setMap] = useState(true)
+	const [screen , setScreen] = useState()	
+	const [ifscreenchange, setIfscreenchange] = useState(false)
+		const [{ x, y, z }, setData] = useState({
+	    x: 0,
+	    y: 0,
+	    z: 0,
+	  });
+	  const [subscription, setSubscription] = useState(null);
 
-	
-	
-	
+	  const _slow = () => Accelerometer.setUpdateInterval(1000);
+	  const _fast = () => Accelerometer.setUpdateInterval(16);
+
+	  const _subscribe = () => {
+	    setSubscription(
+	      Accelerometer.addListener(setData)
+	    );
+	  };
+
+	  const _unsubscribe = () => {
+	    subscription && subscription.remove();
+	    setSubscription(null);
+	  };
+
+	  useEffect(() => {
+	    _subscribe();
+	    return () => _unsubscribe();
+	  }, []);
 	const myPlace = {
 	  type: 'FeatureCollection',
 	  features: [
@@ -49,8 +61,13 @@ export default function App() {
 	    }
 	  ]
 	};
-	const getbackend = () =>{  
-		axios.get('http://192.168.42.47:3000/heyapp').then(res => setBackendapi(res.data)).catch(err=> setBackendapi(err))
+	const getbackend = async () =>{  
+
+	  	setTanlocation({longitude: longitudeuser, latitude: latitudeuser})
+	      let currentlocation = await location
+	      let cords = await  currentlocation.coords.latitude
+	      
+	       await axios.get('http://192.168.42.111:3000/heyapp', {params: {currentlat: location, longo: longitudeuser, lato: latitudeuser  }}).then(res => setBackendapi(res.data)).catch(err=> setBackendapi(err))
 
 	}
   	const getquote = () =>{
@@ -68,17 +85,16 @@ export default function App() {
 	    })()
 
 	  }, [])
+	    Dimensions.addEventListener('change', ()=>{
+		setIfscreenchange(!ifscreenchange)
+	        let dm = Dimensions.get('screen')
+		setScreen(dm)
+	    })
+
 	  useEffect(() => {
 		setPresslocationtwo(presslocationone)
 	  },[presslocationone])
-	  const userchoice = () =>{
-	  	setTanlocation({longitude: longitudeuser, latitude: latitudeuser})
-	  }
 	  	  
-   
-     // the app will do two things 
-     // first is get ur location and save it in the sqlite 
-     // second is u can enter a latitude and longitude and you gonna get a location
       let text = ' awaiting...'
       let obj1 = 'crazy obj'
       let obj2 = 'its working'
@@ -97,8 +113,12 @@ export default function App() {
       <SafeAreaView style={styles.container}>
 
   	<ScrollView style={styles.scrollView}>
+	    <View>
+	      <Text> choose which map (googlemap or leaflet) </Text>
+	     <Button title="choose map" onPress={()=> setMap(!map)} color="blue" /> 
+	    </View>
 	    <View style={styles.container}  >
-		{ location ? 
+		{ map ? ( location ? 
 		   <MapView style={{height: '70%', width: '100%', marginTop:250}}  onPress={ (event) => setPresslocationone(event.nativeEvent.coordinate)}>
 			   <Geojson 
 				geojson={myPlace} 
@@ -114,75 +134,76 @@ export default function App() {
 			     
 			
 			  <Marker  coordinate ={{latitude: tanlocation.latitude +1 , longitude: tanlocation.longitude +1 }} pinColor = {"tan"} title={"more test"} description={"set point"}/>
-		    </MapView> : <Text>text</Text>}
+		    </MapView> : <Text>text</Text> ) :  ( location ? <View>
+									     <LeafletView
+										mapLayers={[
+											{ url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' }
+										]}
+										mapMarkers={[
+											{
+											  position: {
+											    lat: tanlocation.latitude,
+											    lng: tanlocation.longitude,
+											  },
+											  title: "your home",
+											  icon: "https://unpkg.com/leaflet@1.9.2/dist/images/marker-icon-2x.png",
+											  size: [23, 23],
+											},
+										]}
+											mapCenterPosition={{
+												lat: tanlocation.latitude,
+												lng: tanlocation.longitude,
+											  }}
+									    />
+									    <View style={styles.item}> 
+										    <TextInput
+										      style={{height: 20, backgroundColor: '#61dafb', marginTop:10}}
+										      placeholder="latitude"
+										      onChangeText={newTextb => setLatitudeuser(newTextb)}
+
+										    />
+										    <TextInput
+										      style={{height: 20,  backgroundColor: '#61dafb',marginTop:10}}
+										      placeholder="longitude"
+										      onChangeText={newTexta => setLongitudeuser(newTexta)}/>
+										    <Button title="get backend" onPress={getbackend} color="blue" />
+									    </View>
+									</View> : <Text> no location yet </Text>
+							) }
+
 		<View style={styles.item}>
 		      <Text style={styles.texto}>{respondo ?  respondo.data[0].quote : 'look for quote'} </Text>
+		
 		      <Button title="get a quote" onPress={getquote} color="green" /> 
 		</View>
-		<View style={styles.item}>
-		  <Text style={styles.texto} > your timestamp: {obj1} , your time latitude: {obj2} , your longitude: {obj3} , this is what the user pressed: {JSON.stringify(presslocationtwo)} , this is what second time pressed: {JSON.stringify(presslocationthree)} new one is like the thing from marker {JSON.stringify(presslocationthree)}, this is the speed of the thing ig  
-		  </Text>
-			 
 		
-		</View>
 	
 
 	    </View>
-	    	<View style={styles.item}> 
-		  <TextInput
-		      style={{height: 20, backgroundColor: '#61dafb', marginTop:10}}
-		      placeholder="latitude"
-		      onChangeText={newTextb => setLatitudeuser(newTextb)}
-
-		    />
-		    <TextInput
-		      style={{height: 20,  backgroundColor: '#61dafb',marginTop:10}}
-		      placeholder="longitude"
-		      onChangeText={newTexta => setLongitudeuser(newTexta)}
-
-		    />
-		   
-
-		</View>
-		<View style={styles.item}>
-			{ location ? 
-				 <LeafletView
-			    	mapLayers={[
-					{ url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' }
-				]}
-				mapMarkers={[
-					{
-					  position: {
-					    lat: location.coords.latitude,
-					    lng: location.coords.longitude,
-					  },
-					  title: "Hôtel-Dieu de Paris",
-					  icon: "https://unpkg.com/leaflet@1.9.2/dist/images/marker-icon-2x.png",
-					  size: [50, 82],
-					  iconAnchor: [25, 82],
-					},
-					
-			     	]}
-			     		mapCenterPosition={{
-			     			lat: location.coords.latitude,
-					    	lng: location.coords.longitude,
-					  }}
-				    // The rest of your props, see the list below
-				/> : <Text> 'no location yet' </Text> }
-			
-		</View>
-	      <Text> what if i add more shit ig </Text>
+	    <View style={styles.item}>
+		<Text> {screen ? <Text>{JSON.stringify(screen)} </Text> : <Text> nothing yet </Text>} </Text>
+	    </View>
+		      
 	      
-	      <Text>this is from express {JSON.stringify(backendapi)} </Text>
-	      
-	      <Button title="get location" onPress={userchoice} color="yellow" /> 
-	      
-	      <Text> fetch data here : {JSON.stringify(tanlocation)}, </Text>
-	      
-	     <Button title="get backend" onPress={getbackend} color="blue" /> 
 	     
 	    
-	    	
+	    	<View style={styles.container}>
+		      <Text style={styles.text}>Accelerometer: (in gs where 1g = 9.81 m/s^2)</Text>
+		      <Text style={styles.text}>x: {x}</Text>
+		      <Text style={styles.text}>y: {y}</Text>
+		      <Text style={styles.text}>z: {z}</Text>
+		      <View style={styles.buttonContainer}>
+			<TouchableOpacity onPress={subscription ? _unsubscribe : _subscribe} style={styles.button}>
+			  <Text>{subscription ? 'On' : 'Off'}</Text>
+			</TouchableOpacity>
+			<TouchableOpacity onPress={_slow} style={[styles.button, styles.middleButton]}>
+			  <Text>Slow</Text>
+			</TouchableOpacity>
+			<TouchableOpacity onPress={_fast} style={styles.button}>
+			  <Text>Fast</Text>
+			</TouchableOpacity>
+		      </View>
+		    </View>
           </ScrollView>
           
         </SafeAreaView>
@@ -193,7 +214,7 @@ export default function App() {
 
 const styles = StyleSheet.create({
 	texto:{
-		marginTop:100,
+		marginTop:50,
 
 	},
 		
@@ -206,6 +227,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop:10,
+
   },
   item: {
     borderWidth: 4,

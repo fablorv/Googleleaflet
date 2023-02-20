@@ -42,7 +42,12 @@ db.serialize(() => {
 
 db.close()
 app.get('/heyapp', (req, res) =>{
+	const longitude = req.query.longo
+	const latitude = req.query.lato
+	const curentlato = req.query.currentlat
+	console.log(longitude, latitude, curentlato)
 	res.send({test:'should work', hope:'at least onetime'})
+
 })
 app.get('/', (req, res) => {
   res.send('Hello World!')
