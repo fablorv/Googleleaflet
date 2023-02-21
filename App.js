@@ -22,7 +22,7 @@ export default function App() {
 	const [latitudeuser, setLatitudeuser] = useState(24)
 	const [map , setMap] = useState(true)
 	const [screen , setScreen] = useState()	
-	const [ifscreenchange, setIfscreenchange] = useState(false)
+	const [ifscreenchange, setIfscreenchange] = useState('0deg')
 		const [{ x, y, z }, setData] = useState({
 	    x: 0,
 	    y: 0,
@@ -31,12 +31,14 @@ export default function App() {
 	  const [subscription, setSubscription] = useState(null);
 
 	  const _slow = () => Accelerometer.setUpdateInterval(1000);
-	  const _fast = () => Accelerometer.setUpdateInterval(16);
 
 	  const _subscribe = () => {
+
 	    setSubscription(
 	      Accelerometer.addListener(setData)
 	    );
+
+	    const _slow = () => Accelerometer.setUpdateInterval(1000);
 	  };
 
 	  const _unsubscribe = () => {
@@ -48,19 +50,19 @@ export default function App() {
 	    _subscribe();
 	    return () => _unsubscribe();
 	  }, []);
-	const myPlace = {
-	  type: 'FeatureCollection',
-	  features: [
-	    {
-	      type: 'Feature',
-	      properties: {},
-	      geometry: {
-		type: 'Point',
-		coordinates: [presslocation.longitude, presslocation.latitude],
-	      }
-	    }
-	  ]
-	};
+	useEffect(()=>{
+
+	  const howscreen = ()=>{
+	    if(x >= 0.6 && x <= 1.1){
+
+	      setIfscreenchange('90deg')
+	    }else if(x <= -0.6 && x >= -1.1){
+	      setIfscreenchange('-90deg')
+	    }else setIfscreenchange('0deg')
+	  }
+	  howscreen()
+	},[z])
+	
 	const getbackend = async () =>{  
 
 	  	setTanlocation({longitude: longitudeuser, latitude: latitudeuser})
@@ -112,29 +114,21 @@ export default function App() {
   return (
       <SafeAreaView style={styles.container}>
 
-  	<ScrollView style={styles.scrollView}>
-	    <View>
+  	<ScrollView style={[styles.scrollView,{transform:[{rotateZ:ifscreenchange}],}]}>
+	    <View style={[{transform:[{rotateZ:'0deg'}],},{marginBottom:180, marginTop:30}]}>
 	      <Text> choose which map (googlemap or leaflet) </Text>
 	     <Button title="choose map" onPress={()=> setMap(!map)} color="blue" /> 
 	    </View>
 	    <View style={styles.container}  >
 		{ map ? ( location ? 
-		   <MapView style={{height: '70%', width: '100%', marginTop:250}}  onPress={ (event) => setPresslocationone(event.nativeEvent.coordinate)}>
-			   <Geojson 
-				geojson={myPlace} 
-				strokeColor="red"
-				fillColor="blue"
-				strokeWidth={2}
-				zIndex={0.1}
-			      />
+		   <MapView style={[{transform:[{rotateZ:'0deg'}],},{height: '100%', width: '200%', marginTop:20}]}  onPress={ (event) => setPresslocationone(event.nativeEvent.coordinate)}>
+			  
 			  <Marker coordinate ={{latitude: presslocationtwo.latitude, longitude: presslocationtwo.longitude}} pinColor = {"purple"} title={"more test"} description={"this is press locatio ntwo"}/>
 			  <Marker  coordinate ={{latitude: location.coords.latitude, longitude: location.coords.longitude}} pinColor = {"blue"} title={"help"} description={"press location "}/>
-			  <Marker  coordinate ={{latitude: tanlocation.latitude, longitude: tanlocation.longitude}} pinColor = {"wheat"} title={"help"} description={"press location "}/>
 			<Polyline coordinates={[location.coords, presslocationone]} strokeColor={"#000"} strokeWidth={3} lineDashPattern={[1]} /> 
 			     
 			
-			  <Marker  coordinate ={{latitude: tanlocation.latitude +1 , longitude: tanlocation.longitude +1 }} pinColor = {"tan"} title={"more test"} description={"set point"}/>
-		    </MapView> : <Text>text</Text> ) :  ( location ? <View>
+		    </MapView> : <Text>text</Text> ) :  ( location ? <View style={{width:'100%', height:'100%'}}>
 									     <LeafletView
 										mapLayers={[
 											{ url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' }
@@ -157,7 +151,7 @@ export default function App() {
 									    />
 									    <View style={styles.item}> 
 										    <TextInput
-										      style={{height: 20, backgroundColor: '#61dafb', marginTop:10}}
+										      style={{height: 20, backgroundColor: '#61dafb', marginTop:360}}
 										      placeholder="latitude"
 										      onChangeText={newTextb => setLatitudeuser(newTextb)}
 
@@ -171,7 +165,7 @@ export default function App() {
 									</View> : <Text> no location yet </Text>
 							) }
 
-		<View style={styles.item}>
+		<View style={[styles.item, styles.quoteapi ]}>
 		      <Text style={styles.texto}>{respondo ?  respondo.data[0].quote : 'look for quote'} </Text>
 		
 		      <Button title="get a quote" onPress={getquote} color="green" /> 
@@ -180,13 +174,6 @@ export default function App() {
 	
 
 	    </View>
-	    <View style={styles.item}>
-		<Text> {screen ? <Text>{JSON.stringify(screen)} </Text> : <Text> nothing yet </Text>} </Text>
-	    </View>
-		      
-	      
-	     
-	    
 	    	<View style={styles.container}>
 		      <Text style={styles.text}>Accelerometer: (in gs where 1g = 9.81 m/s^2)</Text>
 		      <Text style={styles.text}>x: {x}</Text>
@@ -198,9 +185,6 @@ export default function App() {
 			</TouchableOpacity>
 			<TouchableOpacity onPress={_slow} style={[styles.button, styles.middleButton]}>
 			  <Text>Slow</Text>
-			</TouchableOpacity>
-			<TouchableOpacity onPress={_fast} style={styles.button}>
-			  <Text>Fast</Text>
 			</TouchableOpacity>
 		      </View>
 		    </View>
@@ -231,9 +215,13 @@ const styles = StyleSheet.create({
 
   },
   item: {
+    flex:2,
     borderWidth: 4,
     borderColor: 'rgba(0,0,0,0.2)',
-    height:400,
+    height:100,
     borderRadius: 8,
+  },
+  quoteapi:{
+    marginBottom:230,
   },
 });
