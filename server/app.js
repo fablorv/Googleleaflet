@@ -4,8 +4,8 @@
 const express = require('express')
 const app = express()
 const port = 3000
-const sqlite3 = require('sqlite3').verbose()
-const db = new sqlite3.Database(':memory:')
+const sqlite3 = require('sqlite3').verbose();
+
 
 
 app.use(express.urlencoded({ extended: true }));
@@ -20,32 +20,44 @@ app.use((_, res, next) => {
 });
 
 
+ 
 
 
 
-
-
-db.serialize(() => {
-  db.run('CREATE TABLE lorem (info TEXT)')
-  const stmt = db.prepare('INSERT INTO lorem VALUES (?)')
-
-  for (let i = 0; i < 10; i++) {
-    stmt.run(`Ipsum ${i}`)
-  }
-
-  stmt.finalize()
-
-  db.each('SELECT rowid AS id, info FROM lorem', (err, row) => {
-    console.log(`${row.id}: ${row.info}`)
-  })
-})
-
-db.close()
 app.get('/heyapp', (req, res) =>{
 	const longitude = req.query.longo
 	const latitude = req.query.lato
 	const curentlato = req.query.currentlat
-	console.log(longitude, latitude, curentlato)
+	const db = new sqlite3.Database('./locations.db', (err) => {
+	    if (err) {
+		console.error("Erro opening database " + err.message);
+	    } else {
+
+		db.run('CREATE TABLE employees( \
+		    employee_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\
+		    latitude INTEGER  NOT NULL,\
+		    longitude INTEGER  NOT NULL,\
+		    timestamp INTEGER,\
+		    currentlong INTEGER,\
+		    currentlat INTEGER\
+		)', (err) => {
+		    if (err) {
+		        console.log("Table already exists.");
+		    }
+		    let insert = 'INSERT INTO employees (latitude, longitude, timestamp, currentlong, currentlat) VALUES (?,?,?,?,?)';
+		    db.run(insert, [latitude, longitude, curentlato.timestamp, curentlato.coords.longitude, curentlato.coords.latitude]);
+
+
+		});
+	    }
+	});
+	console.log('alive')
+	db.all("SELECT * FROM employees", function(err, rows) {  
+	    rows.forEach(function (row) {  
+		console.log(row);    // and other columns, if desired
+	    })  
+	});
+	 
 	res.send({test:'should work', hope:'at least onetime'})
 
 })

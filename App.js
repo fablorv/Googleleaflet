@@ -17,11 +17,9 @@ export default function App() {
 	const [presslocation , setPresslocation] = useState({longitude:36.165329, latitude:5.844287})
 	const [presslocationone , setPresslocationone] = useState({longitude:0, latitude:1})
 	const [presslocationtwo, setPresslocationtwo] = useState({longitude:10.22345, latitude:90.22214})
-	const [presslocationthree, setPresslocationthree] = useState({longitude:20.22345, latitude:80.22214})
 	const [longitudeuser, setLongitudeuser] = useState(10)
 	const [latitudeuser, setLatitudeuser] = useState(24)
 	const [map , setMap] = useState(true)
-	const [screen , setScreen] = useState()	
 	const [ifscreenchange, setIfscreenchange] = useState('0deg')
 		const [{ x, y, z }, setData] = useState({
 	    x: 0,
@@ -65,11 +63,8 @@ export default function App() {
 	
 	const getbackend = async () =>{  
 
-	  	setTanlocation({longitude: longitudeuser, latitude: latitudeuser})
-	      let currentlocation = await location
-	      let cords = await  currentlocation.coords.latitude
-	      
-	       await axios.get('http://192.168.42.111:3000/heyapp', {params: {currentlat: location, longo: longitudeuser, lato: latitudeuser  }}).then(res => setBackendapi(res.data)).catch(err=> setBackendapi(err))
+	      setTanlocation({longitude: longitudeuser, latitude: latitudeuser}) 
+	       await axios.get('http://192.168.42.142:3000/heyapp', {params: {currentlat: location, longo: longitudeuser, lato: latitudeuser  }}).then(res => setBackendapi(res.data)).catch(err=> setBackendapi(err))
 
 	}
   	const getquote = () =>{
@@ -84,6 +79,11 @@ export default function App() {
 	      }
 	      let location = await Location.getCurrentPositionAsync({})
 	      setLocation(location);
+	      setTanlocation(location) 
+	      const _slow = () => Accelerometer.setUpdateInterval(1000);
+	      _slow()
+
+	      setTanlocation({longitude: location.coords.longitude, latitude: location.coords.latitude}) 
 	    })()
 
 	  }, [])
@@ -184,7 +184,7 @@ export default function App() {
 			  <Text>{subscription ? 'On' : 'Off'}</Text>
 			</TouchableOpacity>
 			<TouchableOpacity onPress={_slow} style={[styles.button, styles.middleButton]}>
-			  <Text>Slow</Text>
+			  <Text>Slow {JSON.stringify(backendapi)}</Text>
 			</TouchableOpacity>
 		      </View>
 		    </View>
