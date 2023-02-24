@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View,Button, Alert , TextInput, ScrollView, SafeAreaView, Dimensions, TouchableOpacity} from 'react-native';
+import { StyleSheet, Text, View,Button, Alert , TextInput, ScrollView, SafeAreaView, Dimensions, TouchableOpacity, Pressable} from 'react-native';
 import MapView, {Geojson, Marker, Polyline} from 'react-native-maps';
 import * as Location from 'expo-location';
 import React , {useState, useEffect} from 'react';
@@ -20,6 +20,9 @@ export default function App() {
 	const [longitudeuser, setLongitudeuser] = useState(10)
 	const [latitudeuser, setLatitudeuser] = useState(24)
 	const [map , setMap] = useState(true)
+	const [mapviewp,setMapviewp] = useState({height: '100%', width: '100%'})
+	const [dissapear, setDissapear] = useState({flex: 1, backgroundColor: 'white', marginTop:'2%'})
+	const [quotestyle, setQuotestyle] = useState({flex: 2, backgroundColor: 'white', marginTop:'10%'})
 	const [ifscreenchange, setIfscreenchange] = useState('0deg')
 		const [{ x, y, z }, setData] = useState({
 	    x: 0,
@@ -52,11 +55,24 @@ export default function App() {
 
 	  const howscreen = ()=>{
 	    if(x >= 0.6 && x <= 1.1){
-
+		setMapviewp({height: '100%',
+		  	 width: '220%',
+		  	 marginLeft: -200,
+		  	 marginTop:60,
+		  	 maringBottom:-50})
+		  	 setDissapear({display:'none'})
+		  	 setQuotestyle({display:'none'})
 	      setIfscreenchange('90deg')
 	    }else if(x <= -0.6 && x >= -1.1){
 	      setIfscreenchange('-90deg')
-	    }else setIfscreenchange('0deg')
+	      setMapviewp({height: '100%',
+  	 width: '220%',
+  	 marginLeft: -200,
+  	 marginTop:60,
+  	 maringBottom:-50})
+  	 	setDissapear({display:'none'})
+  	 	setQuotestyle({display:'none'})
+	    }else {setIfscreenchange('0deg'); setMapviewp({height: '100%', width: '100%'}); setDissapear({flex: 1, backgroundColor: 'white', marginTop:'2%'});setQuotestyle({flex: 2, backgroundColor: 'white', marginTop:'10%'})}
 	  }
 	  howscreen()
 	},[z])
@@ -112,23 +128,23 @@ export default function App() {
 	};
 	
   return (
-      <SafeAreaView style={styles.container}>
 
-  	<ScrollView style={[styles.scrollView,{transform:[{rotateZ:ifscreenchange}],}]}>
-	    <View style={[{transform:[{rotateZ:'0deg'}],},{marginBottom:180, marginTop:30}]}>
-	      <Text> choose which map (googlemap or leaflet) </Text>
-	     <Button title="choose map" onPress={()=> setMap(!map)} color="blue" /> 
-	    </View>
-	    <View style={styles.container}  >
-		{ map ? ( location ? 
-		   <MapView style={[{transform:[{rotateZ:'0deg'}],},{height: '100%', width: '200%', marginTop:20}]}  onPress={ (event) => setPresslocationone(event.nativeEvent.coordinate)}>
-			  
-			  <Marker coordinate ={{latitude: presslocationtwo.latitude, longitude: presslocationtwo.longitude}} pinColor = {"purple"} title={"more test"} description={"this is press locatio ntwo"}/>
+	      <View style={[styles.container, {transform:[{rotateZ:ifscreenchange}],}]}>
+	      	    <Pressable style={styles.button} onPress={()=> setMap(!map)}>
+			<Text style={styles.text} > {!map ? <Text> google maps</Text> : <Text> leaflet </Text>} </Text>
+		    </Pressable>
+
+		<View style={[{flex: 1}, styles.elementsContainer]}>
+		  <View style={{flex: 3, backgroundColor: '#EE2C38'}}>
+		  
+		  	{ map ? ( location ? 
+		   <MapView style={mapviewp}  onPress={ (event) => setPresslocationone(event.nativeEvent.coordinate)}>
+
 			  <Marker  coordinate ={{latitude: location.coords.latitude, longitude: location.coords.longitude}} pinColor = {"blue"} title={"help"} description={"press location "}/>
-			<Polyline coordinates={[location.coords, presslocationone]} strokeColor={"#000"} strokeWidth={3} lineDashPattern={[1]} /> 
+
 			     
 			
-		    </MapView> : <Text>text</Text> ) :  ( location ? <View style={{width:'100%', height:'100%'}}>
+		    </MapView> : <Text>text</Text> ) :  ( location ? <View style={mapviewp}>
 									     <LeafletView
 										mapLayers={[
 											{ url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' }
@@ -150,78 +166,109 @@ export default function App() {
 											  }}
 									    />
 									    <View style={styles.item}> 
-										    <TextInput
-										      style={{height: 20, backgroundColor: '#61dafb', marginTop:360}}
-										      placeholder="latitude"
-										      onChangeText={newTextb => setLatitudeuser(newTextb)}
-
-										    />
-										    <TextInput
-										      style={{height: 20,  backgroundColor: '#61dafb',marginTop:10}}
-										      placeholder="longitude"
-										      onChangeText={newTexta => setLongitudeuser(newTexta)}/>
-										    <Button title="get backend" onPress={getbackend} color="blue" />
+										    
 									    </View>
 									</View> : <Text> no location yet </Text>
 							) }
+		  </View>
+		  { !map ? 
+		  <View style={dissapear}> 
+		  	<TextInput
+				style={{height: 30,width:'45%',borderRadius:5, borderWidth:1, marginBottom:3, paddingLeft:10}}
+				placeholder="latitude"
+				onChangeText={newTextb => setLatitudeuser(newTextb)}
 
-		<View style={[styles.item, styles.quoteapi ]}>
-		      <Text style={styles.texto}>{respondo ?  respondo.data[0].quote : 'look for quote'} </Text>
-		
-		      <Button title="get a quote" onPress={getquote} color="green" /> 
+			      />
+			      <TextInput
+				style={{height: 30,width:'45%',borderRadius:5, borderWidth:1,paddingLeft:10}}
+				placeholder="longitude"
+				onChangeText={newTexta => setLongitudeuser(newTexta)}/>
+				<Pressable style={styles.buttono} onPress={getbackend}>
+					<Text style={styles.text} > GO TO LOCATION</Text>
+				 </Pressable>
+
+
+			      
+		  </View> : null}
+
+			  <View style={quotestyle} > 
+			  	<Text style={styles.text,{color:'black'}}>{respondo.status == 200 ?  respondo.data[0].quote : 'click the button to '} </Text>
+			  	<Pressable style={styles.buttono} onPress={getquote}>
+					<Text style={styles.text}> get quote </Text>
+				 </Pressable>
+
+
+			  </View>
+
 		</View>
-		
+	      </View>
 	
 
-	    </View>
-	    	<View style={styles.container}>
-		      <Text style={styles.text}>Accelerometer: (in gs where 1g = 9.81 m/s^2)</Text>
-		      <Text style={styles.text}>x: {x}</Text>
-		      <Text style={styles.text}>y: {y}</Text>
-		      <Text style={styles.text}>z: {z}</Text>
-		      <View style={styles.buttonContainer}>
-			<TouchableOpacity onPress={subscription ? _unsubscribe : _subscribe} style={styles.button}>
-			  <Text>{subscription ? 'On' : 'Off'}</Text>
-			</TouchableOpacity>
-			<TouchableOpacity onPress={_slow} style={[styles.button, styles.middleButton]}>
-			  <Text>Slow {JSON.stringify(backendapi)}</Text>
-			</TouchableOpacity>
-		      </View>
-		    </View>
-          </ScrollView>
+
           
-        </SafeAreaView>
+
 
 
   );
 }
 
 const styles = StyleSheet.create({
-	texto:{
-		marginTop:50,
-
-	},
-		
-  scrollView: {
-    backgroundColor: 'pink',
-    marginHorizontal: 20,
+	container: {
+    marginTop: 48,
+    flex: 1
   },
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
+  headerStyle: {
+    fontSize: 24,
+    textAlign: 'center',
+    fontWeight: '100',
+    marginBottom: 12
+  },
+  elementsContainer: {
+    backgroundColor: 'white',
+    marginLeft: 24,
+    marginRight: 24,
+    marginBottom: 24
+  },
+  mapviewstyle:{
+  	height: '100%',
+  	 width: '100%',
+  	 
+  	 
+  },
+  mapviewstylep:{
+  	height: '200%',
+  	 width: '220%',
+  	 marginLeft: -200,
+  	 marginTop:50,
+  },
+  button: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop:10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    elevation: 3,
+    backgroundColor: 'black',
+    width:'50%',
+    marginLeft: '25%',
+  },
+  text: {
+    fontSize: 16,
+    lineHeight: 19,
+    fontWeight: 'bold',
+    letterSpacing: 0.25,
+    color: 'white',
+    paddingTop:5,
+  },
+  buttono: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 4,
+    elevation: 3,
+    backgroundColor: 'black',
+	
 
-  },
-  item: {
-    flex:2,
-    borderWidth: 4,
-    borderColor: 'rgba(0,0,0,0.2)',
-    height:100,
-    borderRadius: 8,
-  },
-  quoteapi:{
-    marginBottom:230,
   },
 });
